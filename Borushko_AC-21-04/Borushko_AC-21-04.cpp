@@ -32,6 +32,8 @@ void showMenu()
     cout << "\n";
 }
 
+//функции для изменения добавленных элементов
+
 void EditPipeRepair(Pipe& x)
 {
     cout << "Re-enter the 'under repair' parameter:" << endl;
@@ -65,6 +67,8 @@ void LoadPipe(ifstream& fin, Pipe& p)
     fin >> p.diameter;
     fin >> p.repair;
 }
+
+//функции для работы с файлами
 
 void SaveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
 {
@@ -136,6 +140,8 @@ void DownloadFromFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>&
     }
 }
 
+//выбор и удаление объектов
+
 Pipe& selectPipe(unordered_map<int, Pipe>& mP)
 {
     cout << "Enter pipe ID: ";
@@ -178,6 +184,8 @@ void deleteOneStaton(unordered_map<int, Station>& mS)
     cout << "Station is removed" << endl;
 }
 
+//поиск по станциям
+
 template<typename T>
 using Filter1 = bool(*)(const Station& s, T parameter);
 
@@ -211,6 +219,8 @@ vector<uint32_t> findStationByFilter(unordered_map<int, Station>& mS, Filter1<T>
 
     return result;
 }
+
+//поиск по трубам
 
 template<typename T>
 using Filter2 = bool(*)(const Pipe& p, T parameter);
