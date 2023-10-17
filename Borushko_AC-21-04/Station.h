@@ -10,7 +10,7 @@ public:
 	static uint32_t newStationID;
 
 	std::string name;
-	uint32_t numOfWorkshops, numOfWorkingWorkshops, efficiency;
+	uint32_t numOfWorkshops, numOfWorkshopsInUse, efficiency;
 
 	friend std::ostream& operator << (std::ostream& out, const Station& x);
 	friend std::istream& operator >> (std::istream& in, Station& x);
