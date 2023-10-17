@@ -39,3 +39,8 @@ uint32_t Station::getStationID()
 {
     return stationID;
 }
+
+void Station::setStationID(uint32_t id)
+{
+    stationID = id;
+}

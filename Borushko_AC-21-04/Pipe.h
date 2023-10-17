@@ -17,5 +17,6 @@ public:
 	Pipe();
 
 	uint32_t getPipeID() const;
+	void setPipeID(uint32_t);
 };
 

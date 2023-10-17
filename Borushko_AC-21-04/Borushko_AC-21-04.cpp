@@ -11,10 +11,11 @@
 #include "Utils.h"
 #include "Station.h"
 #include <unordered_map>
+#include "Borushko_AC-21-04.h"
 
 using namespace std;
 
-enum mainMenu { exitMenu, addPipe, addStation, viewObjects, editPipe, editStation, save, download };
+enum mainMenu { exitMenu, addPipe, addStation, viewObjects, editPipe, editStation, save, download, pipeSearch, stationSearch };
 
 void showMenu()
 {
@@ -30,6 +31,114 @@ void showMenu()
     cout << "\n";
 }
 
+void editPipeRepair(Pipe& x)
+{
+    cout << "Re-enter the 'under repair' parameter:" << endl;
+    x.repair = getInRange(0, 1);
+}
+void editStationWorkingWorkshops(Station& x)
+{
+    cout << "Re-enter the number of workshops in use:" << endl;
+    x.numOfWorkingWorkshops = getInRange(1, x.numOfWorkshops);
+    x.efficiency = double(x.numOfWorkingWorkshops * 100) / x.numOfWorkshops;
+}
+
+void LoadStation(ifstream& fin, Station& s)
+{
+    uint32_t id;
+    fin >> id;
+    s.setStationID(id);
+    fin >> ws;
+    getline(fin, s.name);
+    fin >> s.numOfWorkshops;
+    fin >> s.numOfWorkingWorkshops;
+    fin >> s.efficiency;
+}
+
+void LoadPipe(ifstream& fin, Pipe& p)
+{
+    uint32_t id;
+    fin >> id;
+    p.setPipeID(id);
+    fin >> p.length;
+    fin >> p.diameter;
+    fin >> p.repair;
+}
+
+void saveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
+{
+    cout << "Enter the file name: ";
+    string oFileName;
+    cin >> ws;
+    getline(cin, oFileName);
+    oFileName = oFileName + ".txt";
+    ofstream fout;
+    fout.open(oFileName);
+    if (!fout.is_open())
+        cerr << "The file cannot be opened\n";
+    else
+    {
+        if (mP.size() != 0)
+        {
+            for (auto& [pID, p] : mP)
+            {
+                fout << "pipe" << endl;
+                fout << p.getPipeID() << std::endl << p.length << std::endl << p.diameter << std::endl << p.repair << std::endl;
+            }
+
+        }
+        if (mS.size() != 0)
+        {
+            for (auto& [sID, s] : mS)
+            {
+                fout << "station" << endl;
+                fout << s.getStationID() << std::endl << s.name << endl << s.numOfWorkshops << endl << s.numOfWorkingWorkshops << endl << s.efficiency << endl;
+            }
+
+        }
+    }
+    fout.close();
+    cout << "Data is saved" << endl;
+}
+
+void downloadFromFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
+{
+    Pipe p;
+    Station s;
+    cout << "Enter the file name (.txt): ";
+    string iFileName;
+    cin >> ws;
+    getline(cin, iFileName);
+    iFileName = iFileName + ".txt";
+    ifstream fin;
+    fin.open(iFileName);
+    if (!fin.is_open())
+        cerr << "The file is not found\n";
+    else
+    {
+        while (!fin.eof())
+        {
+            string line;
+            fin >> ws;
+            getline(fin, line);
+            if (line == "station")
+            {
+                LoadStation(fin, s);
+                mS.insert({ s.getStationID(), s });
+            }
+
+            if (line == "pipe")
+            {
+                LoadPipe(fin, p);
+                mP.insert({ p.getPipeID(), p });
+            }
+        }
+
+        cout << "Data is uploaded" << endl;
+        fin.close();
+    }
+}
+
 Pipe& selectPipe(unordered_map<int, Pipe>& mP)
 {
     cout << "Enter pipe ID: ";
@@ -37,7 +146,7 @@ Pipe& selectPipe(unordered_map<int, Pipe>& mP)
     getCorrect(userID);
     while (mP.find(userID) == mP.end())
     {
-        cout << "There is no pipe with this id\n";
+        cout << "There is no pipe with this ID\n";
         cout << "Enter pipe ID: ";
         getCorrect(userID);
     }
@@ -51,7 +160,7 @@ Station& selectStation(unordered_map<int, Station>& mS)
     getCorrect(userID);
     while (mS.find(userID) == mS.end())
     {
-        cout << "There is no station with this id\n";
+        cout << "There is no station with this ID\n";
         cout << "Enter station ID: ";
         getCorrect(userID);
     }
@@ -68,7 +177,7 @@ int main()
         showMenu();
         cout << "Enter an operation: ";
         uint32_t operation;
-        operation = getInRange(0, 7);
+        operation = getInRange(0, 9);
         switch (operation)
         {
         case mainMenu::exitMenu:
@@ -108,7 +217,32 @@ int main()
                 }
             }
             break;
-        }   
+        }  
+        case mainMenu::editPipe:
+            system("cls");
+            editPipeRepair(selectPipe(manyPipes));
+            break;
+
+        case mainMenu::editStation:
+            system("cls");
+            editStationWorkingWorkshops(selectStation(manyStations));
+            break;
+
+        case mainMenu::save:
+            system("cls");
+            saveToFile(manyPipes, manyStations);
+            break;
+
+        case mainMenu::download:
+            system("cls");
+            downloadFromFile(manyPipes, manyStations);
+            break;
+
+        case mainMenu::pipeSearch:
+            break;
+
+        case mainMenu::stationSearch:
+            break;
         }
     }
 

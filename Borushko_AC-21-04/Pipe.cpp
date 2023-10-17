@@ -1,6 +1,7 @@
 #include "Pipe.h"
 #include <iostream>
 #include "Utils.h"
+#include <string>
 
 uint32_t Pipe::newPipeID = 0;
 
@@ -35,4 +36,9 @@ Pipe::Pipe()
 uint32_t Pipe::getPipeID() const
 {
     return pipeID;
+}
+
+void Pipe::setPipeID(uint32_t id)
+{
+    pipeID = id;
 }

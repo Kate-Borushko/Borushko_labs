@@ -18,5 +18,6 @@ public:
 	Station();
 
 	uint32_t getStationID();
+	void setStationID(uint32_t);
 };
 
