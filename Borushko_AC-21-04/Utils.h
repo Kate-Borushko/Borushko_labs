@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cstdint>
+#include "Pipe.h"
 
 template <typename T>
 T getCorrect(T& x)
@@ -15,3 +16,5 @@ T getCorrect(T& x)
 }
 
 uint32_t getInRange(uint8_t x1, uint8_t x2);
+
+double_t getCorrectPipeDiameter();

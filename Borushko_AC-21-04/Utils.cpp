@@ -1,3 +1,4 @@
+#pragma once
 #include "Station.h"
 #include <iostream>
 #include "Utils.h"
@@ -14,4 +15,17 @@ uint32_t getInRange(uint8_t x1, uint8_t x2)
         std::cin.ignore(10000, '\n');
     }
     return x;
+}
+
+double_t getCorrectPipeDiameter()
+{
+    double_t d;
+    std::set<double_t> diameters = { 500, 700, 1400 };
+    getCorrect(d);
+    while (diameters.find(d) == diameters.end())
+    {
+        std::cout << "Enter diameter: 500, 700 or 1400\n";
+        getCorrect(d);
+    }
+    return d;
 }

@@ -132,12 +132,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Borushko_AC-21-04.cpp" />
+    <ClCompile Include="GasTransmissionNetwork.cpp" />
     <ClCompile Include="Pipe.cpp" />
     <ClCompile Include="Station.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Borushko_AC-21-04.h" />
+    <ClInclude Include="GasTransmissionNetwork.h" />
     <ClInclude Include="Pipe.h" />
     <ClInclude Include="Station.h" />
     <ClInclude Include="Utils.h" />

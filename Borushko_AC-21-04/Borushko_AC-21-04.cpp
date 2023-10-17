@@ -12,10 +12,11 @@
 #include "Station.h"
 #include <unordered_map>
 #include "Borushko_AC-21-04.h"
+#include "GasTransmissionNetwork.h"
 
 using namespace std;
 
-enum mainMenu { exitMenu, addPipe, addStation, viewObjects, editPipe, editStation, pipeSearch, stationSearch, save, download, deletePipe, deleteStation, packageEdit};
+enum mainMenu { exitMenu, addPipe, addStation, viewObjects, editPipe, editStation, pipeSearch, stationSearch, save, download, deletePipe, deleteStation, packageEdit, network};
 
 void showMenu()
 {
@@ -28,7 +29,8 @@ void showMenu()
          << "6. Pipe search\n7. Station search" << endl
          << "8. Save to file \n9. Download from file \n"
          << "10. Delete pipe \n11. Delete station \n"
-         << "12. Package editing of pipes\n";
+         << "12. Package editing of pipes\n"
+         << "13. Gas transmission network\n";
     cout << "\n";
 }
 
@@ -46,31 +48,9 @@ void editStationWorkshopsInUse(Station& x)
     x.efficiency = double(x.numOfWorkshopsInUse * 100) / x.numOfWorkshops;
 }
 
-void LoadStation(ifstream& fin, Station& s)
-{
-    uint32_t id;
-    fin >> id;
-    s.setStationID(id);
-    fin >> ws;
-    getline(fin, s.name);
-    fin >> s.numOfWorkshops;
-    fin >> s.numOfWorkshopsInUse;
-    fin >> s.efficiency;
-}
-
-void LoadPipe(ifstream& fin, Pipe& p)
-{
-    uint32_t id;
-    fin >> id;
-    p.setPipeID(id);
-    fin >> p.length;
-    fin >> p.diameter;
-    fin >> p.repair;
-}
-
 //функции для работы с файлами
 
-void SaveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
+void SaveToFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t, Station>& mS)
 {
     cout << "Enter the file name: ";
     string oFileName;
@@ -88,7 +68,7 @@ void SaveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
             for (auto& [pID, p] : mP)
             {
                 fout << "pipe" << endl;
-                fout << p.getPipeID() << std::endl << p.length << std::endl << p.diameter << std::endl << p.repair << std::endl;
+                fout << p << endl;
             }
         }
         if (mS.size() != 0)
@@ -96,7 +76,7 @@ void SaveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
             for (auto& [sID, s] : mS)
             {
                 fout << "station" << endl;
-                fout << s.getStationID() << std::endl << s.name << endl << s.numOfWorkshops << endl << s.numOfWorkshopsInUse << endl << s.efficiency << endl;
+                fout << s << endl;
             }
         }
     }
@@ -104,7 +84,7 @@ void SaveToFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
     cout << "Data is saved" << endl;
 }
 
-void DownloadFromFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>& mS)
+void DownloadFromFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t, Station>& mS)
 {
     Pipe p;
     Station s;
@@ -126,12 +106,12 @@ void DownloadFromFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>&
             getline(fin, line);
             if (line == "station")
             {
-                LoadStation(fin, s);
+                fin >> s;
                 mS.insert({ s.getStationID(), s });
             }
             if (line == "pipe")
             {
-                LoadPipe(fin, p);
+                fin >> p;
                 mP.insert({ p.getPipeID(), p });
             }
         }
@@ -142,7 +122,7 @@ void DownloadFromFile(unordered_map<int, Pipe>& mP, unordered_map<int, Station>&
 
 //выбор и удаление объектов
 
-Pipe& selectPipe(unordered_map<int, Pipe>& mP)
+Pipe& selectPipe(unordered_map<uint32_t, Pipe>& mP)
 {
     cout << "Enter pipe ID: ";
     uint32_t userID;
@@ -156,7 +136,7 @@ Pipe& selectPipe(unordered_map<int, Pipe>& mP)
     return mP[userID];
 }
 
-Station& selectStation(unordered_map<int, Station>& mS)
+Station& selectStation(unordered_map<uint32_t, Station>& mS)
 {
     cout << "Enter station ID: ";
     uint32_t userID;
@@ -170,14 +150,14 @@ Station& selectStation(unordered_map<int, Station>& mS)
     return mS[userID];
 }
 
-void deleteOnePipe(unordered_map<int, Pipe>& mP)
+void deleteOnePipe(unordered_map<uint32_t, Pipe>& mP)
 {
     Pipe p = selectPipe(mP);
     mP.erase(p.getPipeID());
     cout << "Pipe is removed" << endl;
 }
 
-void deleteOneStaton(unordered_map<int, Station>& mS)
+void deleteOneStaton(unordered_map<uint32_t, Station>& mS)
 {
     Station s = selectStation(mS);
     mS.erase(s.getStationID());
@@ -191,24 +171,24 @@ using Filter1 = bool(*)(const Station& s, T parameter);
 
 bool checkByName(const Station& s, string parameter)
 {
-    return s.name == parameter;
+    return s.name.find(parameter) != string::npos;
 }
 
-bool checkByNotWorkingWorkshops(const Station& s, double parameter)
+bool checkByNotWorkingWorkshops(const Station& s, double_t parameter)
 {
     return (double((s.numOfWorkshops - s.numOfWorkshopsInUse) * 100) / s.numOfWorkshops) >= parameter;
 }
 
 template<typename T>
-vector<uint32_t> findStationByFilter(unordered_map<int, Station>& mS, Filter1<T> f, T parameter)
+set<uint32_t> findStationByFilter(unordered_map<uint32_t, Station>& mS, Filter1<T> f, T parameter)
 {
-    vector<uint32_t> result;
+    set<uint32_t> result;
 
     for (auto& [sID, s] : mS)
     {
         if (f(s, parameter))
         {
-            result.push_back(s.getStationID());
+            result.insert(s.getStationID());
         }
     }
 
@@ -235,16 +215,26 @@ bool checkByRepair(const Pipe& p, uint32_t parameter)
     return p.repair == parameter;
 }
 
-template<typename T>
-vector<uint32_t> findPipeByFilter(unordered_map<int, Pipe>& mP, Filter2<T> f, T parameter)
+bool checkByDiameter(const Pipe& p, uint32_t parameter)
 {
-    vector<uint32_t> result;
+    return p.diameter == parameter;
+}
+
+bool checkByConnection(const Pipe& p, uint32_t parameter)
+{
+    return (p.inStationID == parameter) && (p.outStationID == parameter);
+}
+
+template<typename T>
+set<uint32_t> findPipeByFilter(unordered_map<uint32_t, Pipe>& mP, Filter2<T> f, T parameter)
+{
+    set<uint32_t> result;
 
     for (auto& [pID, p] : mP)
     {
         if (f(p, parameter))
         {
-            result.push_back(p.getPipeID());
+            result.insert(p.getPipeID());
         }
     }
 
@@ -256,104 +246,112 @@ vector<uint32_t> findPipeByFilter(unordered_map<int, Pipe>& mP, Filter2<T> f, T 
     return result;
 }
 
-vector<uint32_t> searchPipe(unordered_map<int, Pipe>& mP)
+set<uint32_t> searchPipe(unordered_map<uint32_t, Pipe>& mP)
 {
-    vector<uint32_t> result{};
+    set<uint32_t> result{};
     cout << "Enter the search parameter: \n"
-        << "1 - find pipe by IDs; \n"
-        << "2 - find pipe by the repair\n";
+        << "1: find pipe by IDs; \n"
+        << "2: find pipe by the repair\n";
     if (getInRange(1, 2) == 1)
     {
         uint32_t pID;
         cout << "Enter pipe IDs: ";
         getCorrect(pID);
-        for (uint32_t i : findPipeByFilter(mP, checkByID, pID))
+        result = findPipeByFilter(mP, checkByID, pID);
+        for (uint32_t i : result)
         {
             cout << mP[i];
         }
-        result = findPipeByFilter(mP, checkByID, pID);
     }
     else
     {
         uint32_t repair;
         cout << "Enter marker of repair: ";
         repair = getInRange(0, 1);
-        for (uint32_t i : findPipeByFilter(mP, checkByRepair, repair))
+        result = findPipeByFilter(mP, checkByRepair, repair);
+        for (uint32_t i : result)
         {
             cout << mP[i];
         }
-        result = findPipeByFilter(mP, checkByRepair, repair);
     }
     return result;
 }
 
-void PacketEditPipe(unordered_map<int, Pipe>& mP)
+void PacketEditPipe(unordered_map<uint32_t, Pipe>& mP)
 {
-    vector<uint32_t> allResult;
+    set<uint32_t> allResult;
     allResult = searchPipe(mP);
-    cout << "Enter the edit parameter: \n"
-        << "1: edit all find pipes; \n"
-        << "2: edit some find pipes\n";
-    if (getInRange(1, 2) == 1)
+    if (allResult.size() != 0)
     {
-        cout << "Enter the repair parameter: \n"
-            << "1: all pipes are working; \n"
-            << "2: all pipes are under repair\n";
+        cout << "Enter the edit parameter: \n"
+            << "1: edit all find pipes; \n"
+            << "2: edit some find pipes\n";
         if (getInRange(1, 2) == 1)
         {
-            for (auto& id : allResult)
-                mP[id].repair = 1;
+            cout << "Enter the repair parameter: \n"
+                << "1: all pipes are working; \n"
+                << "2: all pipes under repair\n";
+            if (getInRange(1, 2) == 1)
+            {
+                for (auto& id : allResult)
+                    mP[id].repair = 1;
+            }
+            else
+            {
+                for (auto& id : allResult)
+                    mP[id].repair = 0;
+            }
         }
         else
         {
-            for (auto& id : allResult)
-                mP[id].repair = 0;
+            set <uint32_t> someResult;
+            while (true)
+            {
+                cout << "Enter pipe's id to edit or 0 to complete: ";
+                uint32_t i;
+                i = getInRange(0, *max_element(allResult.begin(), allResult.end()));
+                if (i)
+                {
+                    if (allResult.find(i) == allResult.end())
+                        cout << "There is no pipe with this id\n";
+                    else
+                        someResult.insert(i);
+                }
+                else
+                    break;
+            }
+            cout << "Enter the repair parameter: \n"
+                << "1: all pipes are working; \n"
+                << "2: all pipes under repair\n";
+            if (getInRange(1, 2) == 1)
+            {
+                for (auto& id : someResult)
+                    mP[id].repair = 1;
+            }
+            else
+            {
+                for (auto& id : someResult)
+                    mP[id].repair = 0;
+            }
         }
     }
     else
     {
-        vector <int> someResult;
-        while (true)
-        {
-            cout << "Enter pipe's id to edit or 0 to complete: ";
-            uint32_t i;
-            i = getInRange(0, *max_element(allResult.begin(), allResult.end()));
-            if (i)
-            {
-                if (mP.find(i) == mP.end())
-                    cout << "There is no pipe with this id\n";
-                else
-                    someResult.push_back(i);
-            }
-            else
-                break;
-        }
-        cout << "Enter the repair parameter: \n"
-            << "1: all pipes are working; \n"
-            << "2: all pipes are under repair\n";
-        if (getInRange(1, 2) == 1)
-        {
-            for (auto& id : someResult)
-                mP[id].repair = 1;
-        }
-        else
-        {
-            for (auto& id : someResult)
-                mP[id].repair = 0;
-        }
+        cout << "No pipes in filter -> no packet editing\n";
     }
 }
 
 int main()
 {
-    unordered_map<int, Pipe> manyPipes;
-    unordered_map<int, Station> manyStations;
+    unordered_map<uint32_t, Pipe> manyPipes;
+    unordered_map<uint32_t, Station> manyStations;
+    GasTransmissionNetwork GTN;
     while (true)
     {
         showMenu();
         cout << "Enter an operation: ";
         uint32_t operation;
-        operation = getInRange(0, 12);
+        operation = getInRange(0, 13);
         switch (operation)
         {
         case mainMenu::exitMenu:
@@ -423,13 +421,14 @@ int main()
         {
             system("cls");
             cout << "Enter the search parameter: \n"
-                << "1: find station by name; \n"
-                << "2: find station by the percentage of unused workshops\n";
+                 << "1: find station by name; \n"
+                 << "2: find station by the percentage of unused workshops\n";
             if (getInRange(1, 2) == 1)
             {
                 string name;
                 cout << "Enter station name: ";
-                cin >> name;
+                cin >> ws;
+                getline(cin, name);
                 for (uint32_t i : findStationByFilter(manyStations, checkByName, name))
                 {
                     cout << manyStations[i];
@@ -437,7 +436,7 @@ int main()
             }
             else
             {
-                double percent;
+                double_t percent;
                 cout << "Enter percent of not used workshops: ";
                 getCorrect(percent);
                 for (uint32_t i : findStationByFilter(manyStations, checkByNotWorkingWorkshops, percent))
@@ -458,6 +457,32 @@ int main()
         case mainMenu::packageEdit:
             system("cls");
             PacketEditPipe(manyPipes);
+            break;
+        case mainMenu::network:
+            system("cls");
+            cout << "Choose action: " << endl
+                << "1: connect pipe with stations" << endl
+                << "2: disconnect pipe with stations" << endl
+                << "3: show network" << endl
+                << "4: topological sort" << endl;
+            switch (getInRange(1, 4))
+            {
+            case 1:
+                system("cls");
+                GTN.addConnection(manyPipes, manyStations);
+                break;
+            case 2:
+                system("cls");
+                GTN.deleteConnection(manyPipes, manyStations);
+                break;
+            case 3:
+                system("cls");
+                GTN.showConnection(manyPipes, manyStations);
+                break;
+            case 4:
+                system("cls");
+                break;
+            }
             break;
         }
     }
