@@ -64,8 +64,8 @@ void Pipe::link(uint32_t newIn, uint32_t newOut)
 {
     if (inStationID == 0 && outStationID == 0 && newOut != newIn)
     {
-        inStationID = newOut;
-        outStationID = newIn;
+        inStationID = newIn;
+        outStationID = newOut;
     }
     else
     {
@@ -95,4 +95,9 @@ void Pipe::showLink() const
     std::cout << "Station's ID in: " << inStationID << std::endl;
     std::cout << "Station's ID out: " << outStationID << std::endl;
     std::cout << "Status: " << ((repair == true) ? "repair " : "work ") << std::endl;
+}
+
+uint32_t Pipe::getProductivity() const
+{
+    return round(10000 * sqrt(pow(double(diameter) / 1000, 5) / length));
 }

@@ -20,15 +20,12 @@ public:
 	Pipe();
 
 	uint32_t getPipeID() const;
-
 	void link(uint32_t, uint32_t); 
-
 	void clearLink();
-
 	bool linked() const;
-
 	bool canBeUsed() const;
-
 	void showLink() const;
+
+	uint32_t getProductivity() const;
 };
 

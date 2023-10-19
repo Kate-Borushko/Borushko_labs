@@ -34,20 +34,6 @@ void showMenu()
     cout << "\n";
 }
 
-//функции для изменения добавленных элементов
-
-void EditPipeRepair(Pipe& x)
-{
-    cout << "Re-enter the 'under repair' parameter:" << endl;
-    x.repair = getInRange(0, 1);
-}
-void editStationWorkshopsInUse(Station& x)
-{
-    cout << "Re-enter the number of workshops in use:" << endl;
-    x.numOfWorkshopsInUse = getInRange(1, x.numOfWorkshops);
-    x.efficiency = double(x.numOfWorkshopsInUse * 100) / x.numOfWorkshops;
-}
-
 //функции для работы с файлами
 
 void SaveToFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t, Station>& mS)
@@ -60,7 +46,7 @@ void SaveToFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t, Stati
     ofstream fout;
     fout.open(oFileName);
     if (!fout.is_open())
-        cerr << "The file cannot be opened\n";
+        cerr << "File cannot be opened\n";
     else
     {
         if (mP.size() != 0)
@@ -96,7 +82,7 @@ void DownloadFromFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t,
     ifstream fin;
     fin.open(iFileName);
     if (!fin.is_open())
-        cerr << "The file is not found\n";
+        cerr << "File is not found\n";
     else
     {
         while (!fin.eof())
@@ -108,11 +94,13 @@ void DownloadFromFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t,
             {
                 fin >> s;
                 mS.insert({ s.getStationID(), s });
+                s.newStationID = s.getStationID();
             }
             if (line == "pipe")
             {
                 fin >> p;
                 mP.insert({ p.getPipeID(), p });
+                p.newPipeID = p.getPipeID();
             }
         }
         cout << "Data is uploaded" << endl;
@@ -120,7 +108,21 @@ void DownloadFromFile(unordered_map<uint32_t, Pipe>& mP, unordered_map<uint32_t,
     }
 }
 
-//выбор и удаление объектов
+//функции для изменения добавленных элементов
+
+void EditPipeRepair(Pipe& x)
+{
+    cout << "Re-enter the 'under repair' parameter:" << endl;
+    x.repair = getInRange(0, 1);
+}
+void EditStationWorkshopsInUse(Station& x)
+{
+    cout << "Re-enter the number of workshops in use:" << endl;
+    x.numOfWorkshopsInUse = getInRange(1, x.numOfWorkshops);
+    x.efficiency = double(x.numOfWorkshopsInUse * 100) / x.numOfWorkshops;
+}
+
+//выбор объектов
 
 Pipe& selectPipe(unordered_map<uint32_t, Pipe>& mP)
 {
@@ -150,20 +152,6 @@ Station& selectStation(unordered_map<uint32_t, Station>& mS)
     return mS[userID];
 }
 
-void deleteOnePipe(unordered_map<uint32_t, Pipe>& mP)
-{
-    Pipe p = selectPipe(mP);
-    mP.erase(p.getPipeID());
-    cout << "Pipe is removed" << endl;
-}
-
-void deleteOneStaton(unordered_map<uint32_t, Station>& mS)
-{
-    Station s = selectStation(mS);
-    mS.erase(s.getStationID());
-    cout << "Station is removed" << endl;
-}
-
 //поиск по станциям
 
 template<typename T>
@@ -191,12 +179,10 @@ set<uint32_t> findStationByFilter(unordered_map<uint32_t, Station>& mS, Filter1<
             result.insert(s.getStationID());
         }
     }
-
     if (result.empty())
     {
         cout << "There are no pipes with this parameter\n";
     }
-
     return result;
 }
 
@@ -215,16 +201,6 @@ bool checkByRepair(const Pipe& p, uint32_t parameter)
     return p.repair == parameter;
 }
 
-bool checkByDiameter(const Pipe& p, uint32_t parameter)
-{
-    return p.diameter == parameter;
-}
-
-bool checkByConnection(const Pipe& p, uint32_t parameter)
-{
-    return (p.inStationID == parameter) && (p.outStationID == parameter);
-}
-
 template<typename T>
 set<uint32_t> findPipeByFilter(unordered_map<uint32_t, Pipe>& mP, Filter2<T> f, T parameter)
 {
@@ -237,12 +213,10 @@ set<uint32_t> findPipeByFilter(unordered_map<uint32_t, Pipe>& mP, Filter2<T> f, 
             result.insert(p.getPipeID());
         }
     }
-
     if (result.empty())
     {
         cout << "There are no pipes with this parameter\n";
     }
-
     return result;
 }
 
@@ -399,7 +373,7 @@ int main()
 
         case mainMenu::editStation:
             system("cls");
-            editStationWorkshopsInUse(selectStation(manyStations));
+            EditStationWorkshopsInUse(selectStation(manyStations));
             break;
 
         case mainMenu::save:
@@ -448,11 +422,11 @@ int main()
         }
         case mainMenu::deletePipe:
             system("cls");
-            deleteOnePipe(manyPipes);
+            GTN.deleteItems(manyPipes);
             break;
         case mainMenu::deleteStation:
             system("cls");
-            deleteOneStaton(manyStations);
+            GTN.deleteItems(manyStations);
             break;
         case mainMenu::packageEdit:
             system("cls");
@@ -464,8 +438,10 @@ int main()
                 << "1: connect pipe with stations" << endl
                 << "2: disconnect pipe with stations" << endl
                 << "3: show network" << endl
-                << "4: topological sort" << endl;
-            switch (getInRange(1, 4))
+                << "4: topological sort" << endl
+                << "5: max flow;" << endl
+                << "6: find way" << endl;
+            switch (getInRange(1, 6))
             {
             case 1:
                 system("cls");
@@ -481,6 +457,15 @@ int main()
                 break;
             case 4:
                 system("cls");
+                GTN.showTopologicalSort(manyPipes, manyStations);
+                break;
+            case 5:
+                system("cls");
+                GTN.findMaxStream(manyPipes, manyStations);
+                break;
+            case 6:
+                system("cls");
+                GTN.showFindWay(manyPipes, manyStations);
                 break;
             }
             break;

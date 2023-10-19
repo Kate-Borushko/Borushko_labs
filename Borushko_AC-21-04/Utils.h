@@ -18,3 +18,10 @@ T getCorrect(T& x)
 uint32_t getInRange(uint8_t x1, uint8_t x2);
 
 double_t getCorrectPipeDiameter();
+
+template<typename T>
+uint32_t SearchId(const T& map, uint32_t id)
+{
+    if (map.find(id) != map.end()) return id;
+    return -1;
+}
